@@ -87,7 +87,7 @@ public class PolynomialRegressionModel extends RegressionModel {
 	 * Compute the coefficients of a straight line the best fits the data set
 	 * @see RegressionModel#compute()
 	 */
-	public void computeDevel() {
+	public void computeDevel(double lambda) {
 
 		if (!degreeSet) {
 			throw new IllegalStateException("Degree of polynomial has not been set");
@@ -99,15 +99,7 @@ public class PolynomialRegressionModel extends RegressionModel {
 		}
 		
 		// fits curve to data
-		final WeightedObservedPoints obs = new WeightedObservedPoints();
-		
-		for(int i=0; i<this.xValues.length; i++) {
-			obs.add(this.xValues[i], this.yValues[i]);
-		}
-		
-		final PolynomialCurveFitter fitter = PolynomialCurveFitter.create(coefficients.length-1);
-
-		coefficients = fitter.fit(obs.toList());
+		cost(coefficients, xValues, yValues, lambda);
 		
 		// set the computed flag to true after we have calculated the coefficients
 		computed = true;
@@ -134,6 +126,35 @@ public class PolynomialRegressionModel extends RegressionModel {
 			value += coefficients[i]*Math.pow(x, i); // check 
 		}
 		return value;
+	}
+	
+	private double cost(double[] coefficients, double[] x, double[] y) {
+		return this.cost(coefficients, x, y, 0.0);
+	}
+	
+	private double cost(double[] coefficients, double[] x, double[] y, double lambda) {
+		int m = x.length; // number of training examples
+		
+		double errorTerm = 0;
+		for(int i=0; i<m; i++) {
+			errorTerm += Math.pow(hypothesis(x[i], coefficients) - y[i], 2);
+		}
+		
+		double regularizationTerm = 0;
+		for(int i=1; i<coefficients.length; i++) {
+			regularizationTerm += Math.pow(coefficients[i], 2);
+		}
+		
+		double cost = (.5 / m) * (errorTerm + lambda * regularizationTerm);
+		return cost;
+	}
+	
+	private double hypothesis(double x, double[] coefficients) {
+		double h = 0;
+		for(int i=0; i<coefficients.length; i++) {
+			h += coefficients[i] * Math.pow(x, i);
+		}
+		return h;
 	}
 
 }
